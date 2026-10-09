@@ -9,6 +9,7 @@ on:
       - "build_h1_features_v2.py"
       - "compare_h1_features_rebuild.py"
       - "compare_h9_results.py"
+      - "compare_workbooks_v1.py"
       - "h9_inventory.py"
       - "h9_explore_v1.py"
       - "h12_favourite_longshot.py"
@@ -109,7 +110,7 @@ jobs:
 
       - name: Compare corrected H12 output with prior workbook
         run: |
-          python compare_h9_results.py \
+          python compare_workbooks_v1.py \
             --before /tmp/h12_favourite_longshot_results_before.xlsx \
             --after /tmp/h12_favourite_longshot_results_first.xlsx \
             --out audit_match_keys_v1_output/h12_baseline_comparison
@@ -119,7 +120,7 @@ jobs:
 
       - name: Compare repeated corrected H12 outputs
         run: |
-          python compare_h9_results.py \
+          python compare_workbooks_v1.py \
             --before /tmp/h12_favourite_longshot_results_first.xlsx \
             --after h12_favourite_longshot_results.xlsx \
             --out audit_match_keys_v1_output/h12_repeat_comparison
