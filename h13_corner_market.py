@@ -139,7 +139,7 @@ def veri_yukle():
     print(f"  Temizlik sonrası: {len(df)}")
 
     df["TotalCorners"] = df["HC"] + df["AC"]
-    df["Date_p"] = pd.to_datetime(df["Date"], dayfirst=True, errors="coerce")
+    df["Date_p"] = pd.to_datetime(df["Date"], dayfirst=True, format="mixed", errors="coerce")
 
     return df
 
