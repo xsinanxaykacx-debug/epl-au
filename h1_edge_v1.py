@@ -197,7 +197,7 @@ def _test_ah_settlement():
 # 2. VERİ YÜKLEME
 # ==================================================================
 def _mac_anahtari(df):
-    tarih = pd.to_datetime(df["Date"], dayfirst=True, errors="coerce").dt.strftime("%Y-%m-%d")
+    tarih = pd.to_datetime(df["Date"], dayfirst=True, format="mixed", errors="coerce").dt.strftime("%Y-%m-%d")
     return (df["Season"].astype(str).str.strip()
             + "|" + tarih.fillna("NA")
             + "|" + df["HomeTeam"].astype(str).str.strip()
@@ -237,7 +237,7 @@ def veri_yukle():
     df["Elo_Kategori"] = df["Elo_Diff"].apply(elo_kategori)
     df["Market_Sinif"] = df["Movement"].apply(market_sinif)
     df["Bahis_Yon"] = df["Market_Sinif"].apply(bahis_yonu)
-    df["_tarih"] = pd.to_datetime(df["Date"], dayfirst=True, errors="coerce")
+    df["_tarih"] = pd.to_datetime(df["Date"], dayfirst=True, format="mixed", errors="coerce")
     df = df.sort_values("_tarih").reset_index(drop=True)
     return df
 
