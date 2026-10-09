@@ -72,22 +72,47 @@ def _guvenli_oku(dosya):
     return pd.read_csv(dosya, encoding="utf-8-sig")
 
 
+def _guvenli_tarih_parse(ser):
+    """DD/MM/YYYY ve DD/MM/YY tarihlerini satır bazında doğru ayrıştır."""
+    try:
+        return pd.to_datetime(ser, dayfirst=True, format="mixed", errors="coerce")
+    except (TypeError, ValueError):
+        raw = ser.astype("string").str.strip()
+        out = pd.Series(pd.NaT, index=ser.index, dtype="datetime64[ns]")
+        for fmt in ("%d/%m/%Y", "%d/%m/%y", "%Y-%m-%d", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M"):
+            mask = out.isna() & raw.notna()
+            if mask.any():
+                out.loc[mask] = pd.to_datetime(raw.loc[mask], format=fmt, errors="coerce")
+        return out
+
+
 def veri_yukle():
     frames = []
-    for dosya in sorted(glob.glob("E0*.csv")):
-        ad = os.path.basename(dosya)
+    # Kör sezonu hiçbir zaman glob ile keşfetme; tarihsel allow-list kullan.
+    for ad, sezon in DOSYA_SEZON.items():
         if ad in YASAKLI_DOSYALAR:
             print(f"  [ATLANDI] {ad} — yasaklı (2026/27)")
             continue
-        sezon = DOSYA_SEZON.get(ad, "?")
-        df = _guvenli_oku(dosya)
+        if not os.path.isfile(ad):
+            raise FileNotFoundError(f"Gerekli tarihsel dosya bulunamadı: {ad}")
+        df = _guvenli_oku(ad)
+        if len(df) != 380:
+            raise RuntimeError(f"{ad}: {len(df)} satır; beklenen 380. Satır silinmedi.")
         df["Season"] = sezon
         frames.append(df)
         print(f"  {ad:15s} → {sezon}  ({len(df)} satır)")
 
     df = pd.concat(frames, ignore_index=True)
-    df["_tarih"] = pd.to_datetime(df["Date"], dayfirst=True, errors="coerce")
-    df = df.sort_values(["_tarih", "HomeTeam", "AwayTeam"]).reset_index(drop=True)
+    if len(df) != 3800:
+        raise RuntimeError(f"Tarihsel toplam {len(df)}; beklenen 3800.")
+    df["_tarih"] = _guvenli_tarih_parse(df["Date"])
+    if df["_tarih"].isna().any():
+        sample = df.loc[df["_tarih"].isna(), ["Season", "Date", "HomeTeam", "AwayTeam"]].head(10)
+        raise RuntimeError(
+            f"Tarih ayrıştırma başarısız: {int(df['_tarih'].isna().sum())} satır. "
+            f"Örnekler:\\n{sample.to_string(index=False)}"
+        )
+    df = df.sort_values(["_tarih", "HomeTeam", "AwayTeam"], kind="mergesort").reset_index(drop=True)
     df["_mac_id"] = df.index
     return df
 
@@ -342,7 +367,7 @@ def audit_lookahead_real(audit_log, n=AUDIT_N, seed=AUDIT_SEED):
 
 def audit_form_pencere(feat):
     feat = feat.copy()
-    feat["_tarih"] = pd.to_datetime(feat["Date"], dayfirst=True, errors="coerce")
+    feat["_tarih"] = _guvenli_tarih_parse(feat["Date"])
 
     ev_df = feat[["Season", "_tarih", "HomeTeam", "Home_Form3_Pre", "Home_Form5_Pre", "Home_Form10_Pre"]].copy()
     ev_df.columns = ["Season", "_tarih", "Takim", "Form3", "Form5", "Form10"]
