@@ -11,6 +11,7 @@ on:
       - "compare_h9_results.py"
       - "h9_inventory.py"
       - "h9_explore_v1.py"
+      - "h12_favourite_longshot.py"
       - "E0.csv"
       - "E0 (1).csv"
       - "E0 (2).csv"
@@ -71,6 +72,9 @@ jobs:
       - name: Preserve prior frozen H9 results
         run: cp h9_explore_v1_results.xlsx /tmp/h9_explore_v1_results_before.xlsx
 
+      - name: Preserve prior H12 results
+        run: cp h12_favourite_longshot_results.xlsx /tmp/h12_favourite_longshot_results_before.xlsx
+
       - name: Re-run frozen H9 Explore protocol (first run)
         run: python h9_explore_v1.py
 
@@ -96,6 +100,32 @@ jobs:
 
       - name: Copy regenerated H9 workbook into report artifact
         run: cp h9_explore_v1_results.xlsx audit_match_keys_v1_output/h9_explore_v1_results_regenerated.xlsx
+
+      - name: Re-run H12 with corrected drawdown date parsing
+        run: python h12_favourite_longshot.py
+
+      - name: Save first corrected H12 run
+        run: cp h12_favourite_longshot_results.xlsx /tmp/h12_favourite_longshot_results_first.xlsx
+
+      - name: Compare corrected H12 output with prior workbook
+        run: |
+          python compare_h9_results.py \\
+            --before /tmp/h12_favourite_longshot_results_before.xlsx \\
+            --after /tmp/h12_favourite_longshot_results_first.xlsx \\
+            --out audit_match_keys_v1_output/h12_baseline_comparison
+
+      - name: Repeat H12 to test deterministic results
+        run: python h12_favourite_longshot.py
+
+      - name: Compare repeated corrected H12 outputs
+        run: |
+          python compare_h9_results.py \\
+            --before /tmp/h12_favourite_longshot_results_first.xlsx \\
+            --after h12_favourite_longshot_results.xlsx \\
+            --out audit_match_keys_v1_output/h12_repeat_comparison
+
+      - name: Copy regenerated H12 workbook into report artifact
+        run: cp h12_favourite_longshot_results.xlsx audit_match_keys_v1_output/h12_favourite_longshot_results_regenerated.xlsx
 
       - name: Upload audit reports
         if: always()
