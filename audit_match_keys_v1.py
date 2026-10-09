@@ -114,9 +114,9 @@ def load_sources() -> pd.DataFrame:
             raise ValueError(f"{filename}: missing required columns: {missing}")
         print(f"  {filename:14s} season={season} rows={len(frame)}")
         if len(frame) != EXPECTED_PER_SEASON:
-            raise ValueError(
-                f"{filename} ({season}) has {len(frame)} rows; "
-                f"expected {EXPECTED_PER_SEASON}. No rows will be silently dropped."
+            print(
+                f"  WARNING: {filename} ({season}) has {len(frame)} rows; "
+                f"expected {EXPECTED_PER_SEASON}. All rows will still be audited."
             )
         frame = frame[["Date", "HomeTeam", "AwayTeam"]].copy()
         frame["Season"] = season
@@ -126,7 +126,10 @@ def load_sources() -> pd.DataFrame:
 
     sources = pd.concat(frames, ignore_index=True)
     if len(sources) != EXPECTED_TOTAL:
-        raise ValueError(f"Historical source total={len(sources)}, expected={EXPECTED_TOTAL}")
+        print(
+            f"WARNING: historical source total={len(sources)}, "
+            f"expected={EXPECTED_TOTAL}; continuing without dropping rows."
+        )
     return sources
 
 
@@ -167,9 +170,9 @@ def main() -> int:
     if missing:
         raise ValueError(f"{FEATURE_FILE.name}: missing key columns: {missing}")
     if len(features) != EXPECTED_TOTAL:
-        raise ValueError(
-            f"{FEATURE_FILE.name} has {len(features)} rows, expected {EXPECTED_TOTAL}; "
-            "audit continues only after this hard invariant is corrected."
+        print(
+            f"WARNING: {FEATURE_FILE.name} has {len(features)} rows, "
+            f"expected {EXPECTED_TOTAL}; continuing to report all mismatches."
         )
     features = features.copy()
     features["FeatureRow"] = range(2, len(features) + 2)
@@ -202,13 +205,17 @@ def main() -> int:
             })
     parse_report = pd.DataFrame(parse_rows)
 
-    src_keys = set(sources["src_key_robust"].dropna().astype(str))
-    feat_keys = set(features["feat_key_robust"].dropna().astype(str))
+    # Invalid-date rows must never count as matched keys, even when both
+    # datasets contain the same sentinel string.
+    src_valid = sources["src_date_robust"].notna()
+    feat_valid = features["feat_date_robust"].notna()
+    src_keys = set(sources.loc[src_valid, "src_key_robust"].astype(str))
+    feat_keys = set(features.loc[feat_valid, "feat_key_robust"].astype(str))
     src_key_counts = sources["src_key_robust"].value_counts(dropna=False)
     feat_key_counts = features["feat_key_robust"].value_counts(dropna=False)
 
-    source_only = sources[~sources["src_key_robust"].isin(feat_keys)].copy()
-    feature_only = features[~features["feat_key_robust"].isin(src_keys)].copy()
+    source_only = sources[~src_valid | ~sources["src_key_robust"].isin(feat_keys)].copy()
+    feature_only = features[~feat_valid | ~features["feat_key_robust"].isin(src_keys)].copy()
 
     # Explain unmatched keys using weaker candidate keys. This is diagnostic only:
     # never auto-corrects names or joins records on partial keys.
@@ -272,8 +279,12 @@ def main() -> int:
     ] = "same season+date exists in unmatched sources; inspect team labels/order"
 
     # Legacy vs robust merge coverage, using normalized teams.
-    legacy_source = set(sources["src_key_legacy"].astype(str))
-    legacy_feature = set(features["feat_key_legacy"].astype(str))
+    legacy_source = set(
+        sources.loc[sources["src_date_legacy"].notna(), "src_key_legacy"].astype(str)
+    )
+    legacy_feature = set(
+        features.loc[features["feat_date_legacy"].notna(), "feat_key_legacy"].astype(str)
+    )
 
     summary = {
         "audit": "audit_match_keys_v1",
@@ -281,8 +292,10 @@ def main() -> int:
         "blind_file_opened": False,
         "source_rows": int(len(sources)),
         "feature_rows": int(len(features)),
-        "source_unique_robust_keys": int(sources["src_key_robust"].nunique(dropna=False)),
-        "feature_unique_robust_keys": int(features["feat_key_robust"].nunique(dropna=False)),
+        "source_unique_robust_keys": int(sources.loc[src_valid, "src_key_robust"].nunique()),
+        "feature_unique_robust_keys": int(features.loc[feat_valid, "feat_key_robust"].nunique()),
+        "source_invalid_date_rows": int((~src_valid).sum()),
+        "feature_invalid_date_rows": int((~feat_valid).sum()),
         "robust_key_intersection": int(len(src_keys & feat_keys)),
         "source_only_rows": int(len(source_only)),
         "feature_only_rows": int(len(feature_only)),
@@ -293,10 +306,10 @@ def main() -> int:
         "feature_legacy_nat": int(features["feat_date_legacy"].isna().sum()),
         "feature_robust_nat": int(features["feat_date_robust"].isna().sum()),
         "legacy_key_intersection": int(len(legacy_source & legacy_feature)),
-        "source_duplicate_robust_key_rows": int(sources["src_key_robust"].duplicated(keep=False).sum()),
-        "feature_duplicate_robust_key_rows": int(features["feat_key_robust"].duplicated(keep=False).sum()),
-        "source_duplicate_key_values": int((src_key_counts > 1).sum()),
-        "feature_duplicate_key_values": int((feat_key_counts > 1).sum()),
+        "source_duplicate_robust_key_rows": int(sources.loc[src_valid, "src_key_robust"].duplicated(keep=False).sum()),
+        "feature_duplicate_robust_key_rows": int(features.loc[feat_valid, "feat_key_robust"].duplicated(keep=False).sum()),
+        "source_duplicate_key_values": int((src_key_counts[src_key_counts.index.isin(src_keys)] > 1).sum()),
+        "feature_duplicate_key_values": int((feat_key_counts[feat_key_counts.index.isin(feat_keys)] > 1).sum()),
     }
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
