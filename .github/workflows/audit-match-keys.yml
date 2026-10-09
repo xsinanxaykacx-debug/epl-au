@@ -1,0 +1,52 @@
+name: Match Key Audit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "audit_match_keys_v1.py"
+      - "E0.csv"
+      - "E0 (1).csv"
+      - "E0 (2).csv"
+      - "E0 (3).csv"
+      - "E0 (4).csv"
+      - "E0 (5).csv"
+      - "E0 (6).csv"
+      - "E0 (7).csv"
+      - "E0 (8).csv"
+      - "E0 (9).csv"
+      - "h1_features_v2.csv"
+      - ".github/workflows/audit-match-keys.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependency
+        run: python -m pip install --upgrade pip pandas
+
+      - name: Run read-only match-key audit
+        run: python audit_match_keys_v1.py
+
+      - name: Upload audit reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: match-key-audit-reports
+          path: audit_match_keys_v1_output/
+          if-no-files-found: warn
+          retention-days: 14
