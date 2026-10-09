@@ -105,7 +105,7 @@ def _guvenli_oku(dosya):
 
 
 def _mac_anahtari(df):
-    tarih = pd.to_datetime(df["Date"], dayfirst=True, errors="coerce").dt.strftime("%Y-%m-%d")
+    tarih = pd.to_datetime(df["Date"], dayfirst=True, format="mixed", errors="coerce").dt.strftime("%Y-%m-%d")
     return (df["Season"].astype(str).str.strip()
             + "|" + tarih.fillna("NA")
             + "|" + df["HomeTeam"].astype(str).str.strip()
@@ -182,7 +182,7 @@ def settle_bets(df_signal):
 
     pl = np.where(ftr == "H", oran - 1.0, -1.0)
 
-    tarih = pd.to_datetime(df_signal["Date"], dayfirst=True, errors="coerce")
+    tarih = pd.to_datetime(df_signal["Date"], dayfirst=True, format="mixed", errors="coerce")
 
     return pl, tarih.values
 
