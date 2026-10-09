@@ -67,15 +67,28 @@ jobs:
       - name: Preserve prior frozen H9 results
         run: cp h9_explore_v1_results.xlsx /tmp/h9_explore_v1_results_before.xlsx
 
-      - name: Re-run frozen H9 Explore protocol
+      - name: Re-run frozen H9 Explore protocol (first run)
         run: python h9_explore_v1.py
 
-      - name: Compare H9 results with committed baseline
+      - name: Save first corrected H9 run
+        run: cp h9_explore_v1_results.xlsx /tmp/h9_explore_v1_first_run.xlsx
+
+      - name: Compare corrected H9 run with committed baseline
         run: |
           python compare_h9_results.py \
             --before /tmp/h9_explore_v1_results_before.xlsx \
+            --after /tmp/h9_explore_v1_first_run.xlsx \
+            --out audit_match_keys_v1_output/baseline_comparison
+
+      - name: Repeat frozen H9 Explore to test determinism
+        run: python h9_explore_v1.py
+
+      - name: Compare two corrected H9 runs
+        run: |
+          python compare_h9_results.py \
+            --before /tmp/h9_explore_v1_first_run.xlsx \
             --after h9_explore_v1_results.xlsx \
-            --out audit_match_keys_v1_output
+            --out audit_match_keys_v1_output/repeat_comparison
 
       - name: Copy regenerated H9 workbook into report artifact
         run: cp h9_explore_v1_results.xlsx audit_match_keys_v1_output/h9_explore_v1_results_regenerated.xlsx
