@@ -164,7 +164,7 @@ def veri_yukle() -> dict:
     eksik = pd.read_excel(ENVANTER, sheet_name=ENVANTER_SHEET)
 
     def _key(df):
-        tarih = pd.to_datetime(df["Date"], dayfirst=True, errors="coerce").dt.strftime("%Y-%m-%d")
+        tarih = pd.to_datetime(df["Date"], dayfirst=True, format="mixed", errors="coerce").dt.strftime("%Y-%m-%d")
         return (df["Season"].astype(str).str.strip()
                 + "|" + tarih.fillna("NA")
                 + "|" + df["HomeTeam"].astype(str).str.strip()
@@ -178,7 +178,7 @@ def veri_yukle() -> dict:
     for etiket, (dosya, sezon, bolme) in DOSYALAR.items():
         df = pd.read_csv(dosya, encoding="utf-8-sig")
         df["Season"] = sezon
-        df["_tarih"] = pd.to_datetime(df["Date"], dayfirst=True, errors="coerce")
+        df["_tarih"] = pd.to_datetime(df["Date"], dayfirst=True, format="mixed", errors="coerce")
         df = df.sort_values("_tarih").reset_index(drop=True)
         df["_key"] = _key(df)
         df["_eksik_ah"] = df["_key"].isin(eksik_ah)
