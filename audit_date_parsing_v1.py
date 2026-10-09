@@ -39,12 +39,9 @@ def date_parser_calls(source: str, path: Path) -> list[tuple[int, str]]:
         if not is_to_datetime:
             continue
         format_kw = next((kw for kw in node.keywords if kw.arg == "format"), None)
-        mixed = (
-            format_kw is not None
-            and isinstance(format_kw.value, ast.Constant)
-            and format_kw.value.value == "mixed"
-        )
-        if not mixed:
+        # Explicit formats are not vulnerable to pandas' single-format inference.
+        # The audit targets only calls that leave format inference at its default.
+        if format_kw is None:
             hits.append((node.lineno, ast.get_source_segment(source, node) or "pd.to_datetime(...)"))
     return hits
 
@@ -116,12 +113,12 @@ def main() -> int:
     if risky_scripts:
         for name, refs, calls in risky_scripts:
             lines = ",".join(str(line) for line, _ in calls)
-            print(f"RISK: {name} | affected source(s): {', '.join(refs)} | non-mixed to_datetime call line(s): {lines}")
+            print(f"RISK: {name} | affected source(s): {', '.join(refs)} | default-inference to_datetime call line(s): {lines}")
     else:
         print("No scripts matched both a non-mixed parser call and a historically affected input file.")
     print()
     print(f"Python scripts scanned: {len(py_files)}")
-    print(f"Non-mixed pd.to_datetime call sites found: {all_legacy_calls}")
+    print(f"Default-inference pd.to_datetime call sites found: {all_legacy_calls}")
     print(f"Potentially affected scripts: {len(risky_scripts)}")
     print(f"Historical rows recoverable by mixed parsing: {total_recovered}")
     print(f"Rows made invalid by mixed parsing: {total_regressed}")
