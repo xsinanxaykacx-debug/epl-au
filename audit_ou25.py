@@ -116,6 +116,7 @@ def normalize_date(series):
     return pd.to_datetime(
         series.astype("string").str.strip(),
         dayfirst=True,
+        format="mixed",
         errors="coerce",
     ).dt.normalize()
 
