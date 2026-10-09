@@ -27,7 +27,7 @@ import pandas as pd
 # AYARLAR
 # ============================================================
 
-BASE = Path(r"C:\Users\bzdye\Downloads\EPL")
+BASE = Path(__file__).resolve().parent
 FEATURE_FILE = BASE / "h1_features_v2.csv"
 OUTPUT_FILE = BASE / "ou25_match_audit.csv"
 DUPLICATE_FILE = BASE / "ou25_duplicate_keys.csv"
