@@ -115,11 +115,37 @@ def _guvenli_oku(dosya):
 
 
 def _mac_anahtari(df):
-    tarih = pd.to_datetime(df["Date"], dayfirst=True, errors="coerce").dt.strftime("%Y-%m-%d")
-    return (df["Season"].astype(str).str.strip()
-            + "|" + tarih.fillna("NA")
-            + "|" + df["HomeTeam"].astype(str).str.strip()
-            + "|" + df["AwayTeam"].astype(str).str.strip())
+    # Kaynaklarda hem DD/MM/YYYY hem DD/MM/YY bulunduğundan her satırı
+    # bağımsız yorumla. Geçersiz tarihleri "NA" anahtarıyla eşleştirme.
+    try:
+        parsed = pd.to_datetime(
+            df["Date"], dayfirst=True, format="mixed", errors="coerce"
+        )
+    except (TypeError, ValueError):
+        # Eski pandas sürümleri için format bazlı güvenli geri dönüş.
+        raw = df["Date"].astype("string").str.strip()
+        parsed = pd.Series(pd.NaT, index=df.index, dtype="datetime64[ns]")
+        for fmt in ("%d/%m/%Y", "%d/%m/%y", "%Y-%m-%d", "%Y-%m-%d %H:%M:%S"):
+            mask = parsed.isna() & raw.notna()
+            if mask.any():
+                parsed.loc[mask] = pd.to_datetime(raw.loc[mask], format=fmt, errors="coerce")
+    if parsed.isna().any():
+        sample = df.loc[parsed.isna(), ["Season", "Date", "HomeTeam", "AwayTeam"]].head(5)
+        raise RuntimeError(
+            f"Maç anahtarında geçersiz tarih var: {int(parsed.isna().sum())} satır. "
+            f"Örnekler:\\n{sample.to_string(index=False)}"
+        )
+    tarih = parsed.dt.strftime("%Y-%m-%d")
+    ev = df["HomeTeam"].astype("string").str.strip().str.replace(r"\\s+", " ", regex=True).str.casefold()
+    dep = df["AwayTeam"].astype("string").str.strip().str.replace(r"\\s+", " ", regex=True).str.casefold()
+    if (ev.isna() | dep.isna() | ev.eq("") | dep.eq("")).any():
+        raise RuntimeError("Maç anahtarında boş ev/deplasman takım adı bulundu.")
+    return (
+        df["Season"].astype("string").str.strip()
+        + "|" + tarih
+        + "|" + ev
+        + "|" + dep
+    )
 
 
 # ==================================================================
