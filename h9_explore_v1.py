@@ -189,6 +189,19 @@ def veri_yukle():
     if len(df) != BEKLENEN_TOP:
         raise RuntimeError(f"Merge sonrası {len(df)} != {BEKLENEN_TOP}")
 
+    # Kanonik maç sırası: feature CSV'sinin fiziksel satır sırasına bağlı kalma.
+    # Bu, LBFGS fit sırasını ve bahis/rapor sırasını tekrar çalıştırmalarda sabitler.
+    df["_sort_date"] = pd.to_datetime(
+        df["Date"], dayfirst=True, format="mixed", errors="coerce"
+    )
+    if df["_sort_date"].isna().any():
+        raise RuntimeError(
+            f"Kanonik sıralama için geçersiz tarih: {int(df['_sort_date'].isna().sum())}"
+        )
+    df = df.sort_values(
+        ["_sort_date", "HomeTeam", "AwayTeam"], kind="mergesort"
+    ).drop(columns=["_sort_date"]).reset_index(drop=True)
+
     dup = df["_key"].duplicated().sum()
     if dup > 0:
         raise RuntimeError(f"Duplicate: {dup}")
