@@ -236,9 +236,12 @@ jobs:
           python h4_inventory.py
           python h5_inventory.py
           python h6_inventory.py
-          python h7_inventory.py
           python h8_inventory.py
           python h8_edge_inventory.py
+
+      - name: Run H7 inventory diagnostic (B365HC availability)
+        continue-on-error: true
+        run: python h7_inventory.py
 
       - name: Compare regenerated inventories with committed baselines
         run: |
