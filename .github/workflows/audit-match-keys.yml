@@ -109,9 +109,9 @@ jobs:
 
       - name: Compare corrected H12 output with prior workbook
         run: |
-          python compare_h9_results.py \\
-            --before /tmp/h12_favourite_longshot_results_before.xlsx \\
-            --after /tmp/h12_favourite_longshot_results_first.xlsx \\
+          python compare_h9_results.py \
+            --before /tmp/h12_favourite_longshot_results_before.xlsx \
+            --after /tmp/h12_favourite_longshot_results_first.xlsx \
             --out audit_match_keys_v1_output/h12_baseline_comparison
 
       - name: Repeat H12 to test deterministic results
@@ -119,9 +119,9 @@ jobs:
 
       - name: Compare repeated corrected H12 outputs
         run: |
-          python compare_h9_results.py \\
-            --before /tmp/h12_favourite_longshot_results_first.xlsx \\
-            --after h12_favourite_longshot_results.xlsx \\
+          python compare_h9_results.py \
+            --before /tmp/h12_favourite_longshot_results_first.xlsx \
+            --after h12_favourite_longshot_results.xlsx \
             --out audit_match_keys_v1_output/h12_repeat_comparison
 
       - name: Copy regenerated H12 workbook into report artifact
