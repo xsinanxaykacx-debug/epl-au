@@ -253,7 +253,7 @@ jobs:
           done
           python compare_workbooks_v1.py --before /tmp/inventory_h1_before.xlsx --after inventory_h1.xlsx --out audit_match_keys_v1_output/inventory_h1_baseline_comparison
           cp inventory_h1.xlsx audit_match_keys_v1_output/inventory_h1_regenerated.xlsx
-          cp h7_inventory.xlsx audit_match_keys_v1_output/h7_inventory_regenerated.xlsx
+          if [ -f h7_inventory.xlsx ]; then cp h7_inventory.xlsx audit_match_keys_v1_output/h7_inventory_regenerated.xlsx; fi
 
       - name: Re-run frozen H2-H8 Explore and Edge protocols
         run: |
