@@ -132,7 +132,7 @@ def veri_yukle():
     df["fav_taraf"] = np.where(fav_idx == 0, "H",
                        np.where(fav_idx == 1, "D", "A"))
 
-    df["Date_p"] = pd.to_datetime(df["Date"], dayfirst=True, errors="coerce")
+    df["Date_p"] = pd.to_datetime(df["Date"], dayfirst=True, format="mixed", errors="coerce")
     return df
 
 
