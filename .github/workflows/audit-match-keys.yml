@@ -50,10 +50,11 @@ jobs:
       - name: Install dependencies
         run: python -m pip install --upgrade pip pandas numpy openpyxl scipy scikit-learn
 
-      - name: Preserve current feature file for comparison
+      - name: Preserve current feature files for comparison
         run: |
           mkdir -p audit_match_keys_v1_output
           cp h1_features_v2.csv /tmp/h1_features_v2_before.csv
+          cp h1_features.csv /tmp/h1_features_v1_before.csv
 
       - name: Rebuild H1 features from historical seasons only
         run: python build_h1_features_v2.py
