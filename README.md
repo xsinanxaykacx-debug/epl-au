@@ -181,3 +181,46 @@ This is a methodological stopping decision, not a claim that xG has no predictiv
 ---
 
 ## Research Architecture
+
+The repository separates market-structure analysis, predictive modeling, and economic validation. Each research path should retain its own frozen protocol, artifacts, test evidence, and conclusion. A structural or software test passing does not by itself establish a profitable betting edge.
+
+
+### Completed sub-study: EPL Over/Under 2.5 (closed 2026-10-09)
+
+This is a **separate market and experiment** from the repository's main 1X2 research. Its results must not be merged with or treated as evidence for the 1X2 experiments above.
+
+**Status: CLOSED — profitability was not demonstrated.**
+
+| Item | Reported result |
+|---|---:|
+| Historical coverage | 2015/16–2024/25 (10 seasons; approximately 3,800 matches) |
+| First reported blind test | 2024/25 ROI: -1.94%; reported confidence interval included zero |
+| Controlled comparison final test | 2023/24 |
+| Final-test evaluated bets | 252 |
+| OVER / UNDER bets | 17 / 235 |
+| Net profit | -50.29 units |
+| ROI | -19.96% |
+| IID bootstrap 95% ROI interval | [-34.65%, -5.05%] |
+| Decision | Not supported; closed |
+
+The 2023/24 comparison reportedly trained on 2015/16–2021/22 (2,660 matches), selected among model variants using 2022/23 validation (380 matches), and evaluated on 2023/24 (380 matches). The selected variant was described as an 18-feature logistic-regression model with median imputation and balanced class weights. The 252 bets are a subset of the 380-match test season.
+
+The reported negative ROI interval is conditional on the correctness of the underlying calculations and the IID bootstrap assumption. It does not account fully for temporal dependence or all model-selection uncertainty. It is evidence of negative performance in this test, **not proof that every future strategy must lose or that the whole market is perfectly efficient**.
+
+#### Data, diagnostics, and reported test statuses
+
+- A data audit was reported to cover 3,800 matches with clean match joins and zero score mismatches. The original audit output was not re-run as part of this repository update.
+- The first diagnostic was reported to select OVER for 302 of 325 matches (92.9%); the always-OVER reference was reported to score 57.23% versus 56.92% for that model. These figures are preserved as previously reported, not independently revalidated here.
+- Missing-feature analysis reportedly found 566 training rows and 55 test rows removed because pre-match form/goal-average features were unavailable early in seasons. This is a reported diagnostic and should be checked against its original output before reuse.
+- `test_ips.py`: 5/5 PASS reported.
+- `test_invariant.py`: 18/18 PASS reported.
+- These simulation/invariant tests are **not** tests of betting profitability and do not independently validate the ROI calculations.
+- The reported selected-model Brier score was 0.244570. The meaning of `BaseOver`/`BaseUnder` in the comparison CSV was not established, so no baseline-Brier claim is made.
+- A few calibration bins were reported, including N=1, N=125, and N=221. These partial bin results do not establish a general causal explanation for the betting-side imbalance.
+- The reason for the 17 OVER / 235 UNDER selection split, including any effect from `class_weight="balanced"`, remains an **unconfirmed hypothesis**.
+
+#### Closure and reproducibility boundary
+
+No new threshold or model was tested on the same 2023/24 final-test season after seeing these results. This sub-study is closed. Reopening it requires a genuinely new, pre-specified and independently testable hypothesis with a fresh evaluation protocol.
+
+This record documents results reported during the research conversation. The raw `ou25_*.csv` outputs and source scripts were not available to this GitHub write operation for direct upload or re-execution. Therefore, the figures and test statuses above are explicitly labelled **reported**, not independently verified by this commit.
