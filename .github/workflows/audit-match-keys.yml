@@ -6,6 +6,25 @@ on:
     paths:
       - "audit_match_keys_v1.py"
       - "audit_date_parsing_v1.py"
+      - "h2_explore_v1.py"
+      - "h3_explore_v1.py"
+      - "h4_explore_v1.py"
+      - "h5_explore_v1.py"
+      - "h6_explore_v1.py"
+      - "h7_inventory.py"
+      - "h8_explore_v1.py"
+      - "h8_edge_v1.py"
+      - "h3_inventory.py"
+      - "h4_inventory.py"
+      - "h5_inventory.py"
+      - "h6_inventory.py"
+      - "h8_inventory.py"
+      - "h8_edge_inventory.py"
+      - "h1_edge_v1.py"
+      - "roi_edge_v1.py"
+      - "validation_v1.py"
+      - "confirmation_v1.py"
+      - "inventory_h1.py"
       - "build_h1_features_v2.py"
       - "compare_h1_features_rebuild.py"
       - "compare_h9_results.py"
@@ -37,7 +56,7 @@ permissions:
 jobs:
   audit:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 45
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -48,7 +67,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: python -m pip install --upgrade pip pandas numpy openpyxl scipy scikit-learn
+        run: python -m pip install --upgrade pip pandas numpy openpyxl scipy scikit-learn statsmodels
 
       - name: Preserve current feature files for comparison
         run: |
@@ -197,6 +216,53 @@ jobs:
 
       - name: Copy regenerated H14 workbook into report artifact
         run: cp h14_optimal_odds_band_results.xlsx audit_match_keys_v1_output/h14_optimal_odds_band_results_regenerated.xlsx
+
+      - name: Preserve H2-H8 inventory and model baselines
+        run: |
+          for f in h3_inventory.xlsx h4_inventory.xlsx h5_inventory.xlsx h6_inventory.xlsx h8_inventory.xlsx h8_edge_inventory.xlsx h2_explore_v1_results.xlsx h3_explore_v1_results.xlsx h4_explore_v1_results.xlsx h5_explore_v1_results.xlsx h6_explore_v1_results.xlsx h8_explore_v1_results.xlsx h8_edge_v1_results.xlsx; do
+            cp "$f" "/tmp/${f%.xlsx}_before.xlsx"
+          done
+
+      - name: Rebuild H2-H8 data inventories
+        run: |
+          set -e
+          python h3_inventory.py
+          python h4_inventory.py
+          python h5_inventory.py
+          python h6_inventory.py
+          python h7_inventory.py
+          python h8_inventory.py
+          python h8_edge_inventory.py
+
+      - name: Compare regenerated inventories with committed baselines
+        run: |
+          set -e
+          for f in h3_inventory.xlsx h4_inventory.xlsx h5_inventory.xlsx h6_inventory.xlsx h8_inventory.xlsx h8_edge_inventory.xlsx; do
+            base="${f%.xlsx}"
+            python compare_workbooks_v1.py --before "/tmp/${base}_before.xlsx" --after "$f" --out "audit_match_keys_v1_output/${base}_baseline_comparison"
+            cp "$f" "audit_match_keys_v1_output/${base}_regenerated.xlsx"
+          done
+          cp h7_inventory.xlsx audit_match_keys_v1_output/h7_inventory_regenerated.xlsx
+
+      - name: Re-run frozen H2-H8 Explore and Edge protocols
+        run: |
+          set -e
+          python h2_explore_v1.py
+          python h3_explore_v1.py
+          python h4_explore_v1.py
+          python h5_explore_v1.py
+          python h6_explore_v1.py
+          python h8_explore_v1.py
+          python h8_edge_v1.py
+
+      - name: Compare H2-H8 outputs with committed baselines
+        run: |
+          set -e
+          for f in h2_explore_v1_results.xlsx h3_explore_v1_results.xlsx h4_explore_v1_results.xlsx h5_explore_v1_results.xlsx h6_explore_v1_results.xlsx h8_explore_v1_results.xlsx h8_edge_v1_results.xlsx; do
+            base="${f%.xlsx}"
+            python compare_workbooks_v1.py --before "/tmp/${base}_before.xlsx" --after "$f" --out "audit_match_keys_v1_output/${base}_baseline_comparison"
+            cp "$f" "audit_match_keys_v1_output/${base}_regenerated.xlsx"
+          done
 
       - name: Upload audit reports
         if: always()
