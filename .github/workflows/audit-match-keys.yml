@@ -13,6 +13,10 @@ on:
       - "h9_inventory.py"
       - "h9_explore_v1.py"
       - "h12_favourite_longshot.py"
+      - "audit_ou25.py"
+      - "build_h1_features.py"
+      - "h13_corner_market.py"
+      - "h14_optimal_odds_band.py"
       - "E0.csv"
       - "E0 (1).csv"
       - "E0 (2).csv"
@@ -33,7 +37,7 @@ permissions:
 jobs:
   audit:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -75,6 +79,11 @@ jobs:
 
       - name: Preserve prior H12 results
         run: cp h12_favourite_longshot_results.xlsx /tmp/h12_favourite_longshot_results_before.xlsx
+
+      - name: Preserve prior H13 and H14 results
+        run: |
+          cp h13_corner_market_results.xlsx /tmp/h13_corner_market_results_before.xlsx
+          cp h14_optimal_odds_band_results.xlsx /tmp/h14_optimal_odds_band_results_before.xlsx
 
       - name: Re-run frozen H9 Explore protocol (first run)
         run: python h9_explore_v1.py
@@ -127,6 +136,56 @@ jobs:
 
       - name: Copy regenerated H12 workbook into report artifact
         run: cp h12_favourite_longshot_results.xlsx audit_match_keys_v1_output/h12_favourite_longshot_results_regenerated.xlsx
+
+      - name: Run O/U 2.5 data audit with robust date normalization
+        run: python audit_ou25.py
+
+      - name: Copy O/U 2.5 audit CSV into report artifact
+        run: cp ou25_match_audit.csv audit_match_keys_v1_output/ou25_match_audit.csv
+
+      - name: Run H13 corner-market analysis with robust dates
+        run: python h13_corner_market.py
+
+      - name: Compare H13 output with prior workbook
+        run: |
+          cp h13_corner_market_results.xlsx /tmp/h13_corner_market_results_first.xlsx
+          python compare_workbooks_v1.py \
+            --before /tmp/h13_corner_market_results_before.xlsx \
+            --after /tmp/h13_corner_market_results_first.xlsx \
+            --out audit_match_keys_v1_output/h13_baseline_comparison
+
+      - name: Repeat H13 and compare determinism
+        run: |
+          python h13_corner_market.py
+          python compare_workbooks_v1.py \
+            --before /tmp/h13_corner_market_results_first.xlsx \
+            --after h13_corner_market_results.xlsx \
+            --out audit_match_keys_v1_output/h13_repeat_comparison
+
+      - name: Copy regenerated H13 workbook into report artifact
+        run: cp h13_corner_market_results.xlsx audit_match_keys_v1_output/h13_corner_market_results_regenerated.xlsx
+
+      - name: Run H14 optimal-odds-band analysis with robust dates
+        run: python h14_optimal_odds_band.py
+
+      - name: Compare H14 output with prior workbook
+        run: |
+          cp h14_optimal_odds_band_results.xlsx /tmp/h14_optimal_odds_band_results_first.xlsx
+          python compare_workbooks_v1.py \
+            --before /tmp/h14_optimal_odds_band_results_before.xlsx \
+            --after /tmp/h14_optimal_odds_band_results_first.xlsx \
+            --out audit_match_keys_v1_output/h14_baseline_comparison
+
+      - name: Repeat H14 and compare determinism
+        run: |
+          python h14_optimal_odds_band.py
+          python compare_workbooks_v1.py \
+            --before /tmp/h14_optimal_odds_band_results_first.xlsx \
+            --after h14_optimal_odds_band_results.xlsx \
+            --out audit_match_keys_v1_output/h14_repeat_comparison
+
+      - name: Copy regenerated H14 workbook into report artifact
+        run: cp h14_optimal_odds_band_results.xlsx audit_match_keys_v1_output/h14_optimal_odds_band_results_regenerated.xlsx
 
       - name: Upload audit reports
         if: always()
