@@ -77,7 +77,7 @@ def mac_anahtari(df: pd.DataFrame) -> pd.Series:
     Gerçek maç kimliği: Season | Date | HomeTeam | AwayTeam
     envanter_v2.py'nin Eksik_Maclar sayfasındaki 4 alanla aynı.
     """
-    tarih = pd.to_datetime(df["Date"], dayfirst=True, errors="coerce").dt.strftime("%Y-%m-%d")
+    tarih = pd.to_datetime(df["Date"], dayfirst=True, format="mixed", errors="coerce").dt.strftime("%Y-%m-%d")
     return (
         df["Season"].astype(str).str.strip()
         + "|"
