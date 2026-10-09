@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "audit_match_keys_v1.py"
+      - "audit_date_parsing_v1.py"
       - "build_h1_features_v2.py"
       - "compare_h1_features_rebuild.py"
       - "compare_h9_results.py"
@@ -57,6 +58,9 @@ jobs:
             --before /tmp/h1_features_v2_before.csv \
             --after h1_features_v2.csv \
             --out audit_match_keys_v1_output
+
+      - name: Run repository-wide date parsing audit
+        run: python audit_date_parsing_v1.py
 
       - name: Run read-only match-key audit
         run: python audit_match_keys_v1.py
