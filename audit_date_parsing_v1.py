@@ -56,7 +56,9 @@ def main() -> int:
     print("Historical scope: " + ", ".join(HISTORICAL_FILES))
     print()
 
-    season_impact: dict[str, dict[str, int]] = {}
+    # Parse the concatenated multi-season series exactly as the legacy key builders do.
+    # Parsing each season independently would hide mixed-format inference failures.
+    frames: list[pd.DataFrame] = []
     for filename in HISTORICAL_FILES:
         path = ROOT / filename
         if not path.is_file():
@@ -64,23 +66,33 @@ def main() -> int:
         df = pd.read_csv(path, encoding="utf-8-sig")
         if "Date" not in df.columns:
             raise ValueError(f"{filename} has no Date column")
-        legacy = pd.to_datetime(df["Date"], dayfirst=True, errors="coerce")
-        mixed = pd.to_datetime(df["Date"], dayfirst=True, format="mixed", errors="coerce")
-        season_impact[filename] = {
-            "rows": len(df),
-            "legacy_nat": int(legacy.isna().sum()),
-            "mixed_nat": int(mixed.isna().sum()),
-            "legacy_only_nat": int((legacy.isna() & mixed.notna()).sum()),
-            "mixed_only_nat": int((legacy.notna() & mixed.isna()).sum()),
-        }
+        frames.append(pd.DataFrame({"SourceFile": filename, "Date": df["Date"]}))
 
+    combined = pd.concat(frames, ignore_index=True)
+    legacy_all = pd.to_datetime(combined["Date"], dayfirst=True, errors="coerce")
+    mixed_all = pd.to_datetime(combined["Date"], dayfirst=True, format="mixed", errors="coerce")
+    combined["legacy_nat"] = legacy_all.isna()
+    combined["mixed_nat"] = mixed_all.isna()
+    combined["legacy_only_nat"] = combined["legacy_nat"] & ~combined["mixed_nat"]
+    combined["mixed_only_nat"] = ~combined["legacy_nat"] & combined["mixed_nat"]
+
+    season_impact: dict[str, dict[str, int]] = {}
     print("DATA-BACKED PARSER COMPARISON")
+    print("NOTE: dates are parsed once across the concatenated historical corpus, reproducing legacy mixed-season inference.")
     print(f"{'File':<14} {'Season':<8} {'Rows':>5} {'Legacy NaT':>11} {'Mixed NaT':>10} {'Recovered':>10} {'Regressed':>10}")
     print("-" * 82)
     total_rows = total_legacy_nat = total_mixed_nat = total_recovered = total_regressed = 0
     affected_files: set[str] = set()
     for filename in HISTORICAL_FILES:
-        d = season_impact[filename]
+        group = combined.loc[combined["SourceFile"].eq(filename)]
+        d = {
+            "rows": len(group),
+            "legacy_nat": int(group["legacy_nat"].sum()),
+            "mixed_nat": int(group["mixed_nat"].sum()),
+            "legacy_only_nat": int(group["legacy_only_nat"].sum()),
+            "mixed_only_nat": int(group["mixed_only_nat"].sum()),
+        }
+        season_impact[filename] = d
         print(f"{filename:<14} {SEASON_BY_FILE[filename]:<8} {d['rows']:>5} {d['legacy_nat']:>11} {d['mixed_nat']:>10} {d['legacy_only_nat']:>10} {d['mixed_only_nat']:>10}")
         total_rows += d["rows"]
         total_legacy_nat += d["legacy_nat"]
