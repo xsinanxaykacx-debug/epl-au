@@ -65,6 +65,16 @@ jobs:
             --after h1_features_v2.csv \
             --out audit_match_keys_v1_output
 
+      - name: Rebuild legacy H1 feature script with mixed-format parsing
+        run: python build_h1_features.py
+
+      - name: Compare legacy H1 builder output before and after parser fix
+        run: |
+          python compare_h1_features_rebuild.py \
+            --before /tmp/h1_features_v1_before.csv \
+            --after h1_features.csv \
+            --out audit_match_keys_v1_output/legacy_h1_builder_comparison
+
       - name: Run repository-wide date parsing audit
         run: python audit_date_parsing_v1.py
 
