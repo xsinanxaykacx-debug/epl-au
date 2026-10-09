@@ -78,7 +78,7 @@ D_TESTLERI = [
 # ==================================================================
 def mac_anahtari(df: pd.DataFrame) -> pd.Series:
     """Season | Date | HomeTeam | AwayTeam (Validation ile birebir aynı)."""
-    tarih = pd.to_datetime(df["Date"], dayfirst=True, errors="coerce").dt.strftime("%Y-%m-%d")
+    tarih = pd.to_datetime(df["Date"], dayfirst=True, format="mixed", errors="coerce").dt.strftime("%Y-%m-%d")
     return (
         df["Season"].astype(str).str.strip()
         + "|"
