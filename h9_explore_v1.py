@@ -507,7 +507,9 @@ def bolme_analiz(df_bolme, X_bolme, model, etiket):
     mask = bahis_mask
     pl_bahis = pl[mask]
     oran_bahis = oran[mask]
-    tarih = pd.to_datetime(df_bolme["Date"], dayfirst=True, errors="coerce").values[mask]
+    tarih = pd.to_datetime(
+        df_bolme["Date"], dayfirst=True, format="mixed", errors="coerce"
+    ).values[mask]
 
     win = int((pl_bahis > 0).sum())
     ort_oran = float(oran_bahis.mean())
