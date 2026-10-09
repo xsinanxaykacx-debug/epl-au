@@ -126,7 +126,7 @@ def lookahead_kontrol(df, sezon):
     """
     # Tarih sırası kontrolü
     try:
-        tarih = pd.to_datetime(df["Date"], dayfirst=True, errors="coerce")
+        tarih = pd.to_datetime(df["Date"], dayfirst=True, format="mixed", errors="coerce")
         sirali = tarih.is_monotonic_increasing
     except Exception:
         sirali = None
