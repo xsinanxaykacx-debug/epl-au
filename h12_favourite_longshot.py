@@ -343,7 +343,9 @@ def hucre_detay(df_bolme, bant):
     kazandi = (ftr == fav_taraf)
     pl = np.where(kazandi, odds - 1.0, -1.0)
 
-    tarih = pd.to_datetime(alt["Date"], dayfirst=True, errors="coerce").values
+    tarih = pd.to_datetime(
+        alt["Date"], dayfirst=True, format="mixed", errors="coerce"
+    ).values
 
     ci_lo, ci_hi = bca_bootstrap_roi(pl)
     p_perm = permutation_test_ftr(ftr, fav_taraf, odds)
