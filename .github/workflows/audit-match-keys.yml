@@ -56,7 +56,7 @@ permissions:
 jobs:
   audit:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -74,6 +74,11 @@ jobs:
           mkdir -p audit_match_keys_v1_output
           cp h1_features_v2.csv /tmp/h1_features_v2_before.csv
           cp h1_features.csv /tmp/h1_features_v1_before.csv
+          cp inventory_h1.xlsx /tmp/inventory_h1_before.xlsx
+          cp h1_edge_v1_results.xlsx /tmp/h1_edge_v1_results_before.xlsx
+          cp roi_edge_v1_results.xlsx /tmp/roi_edge_v1_results_before.xlsx
+          cp validation_v1_results.xlsx /tmp/validation_v1_results_before.xlsx
+          cp confirmation_v1_results.xlsx /tmp/confirmation_v1_results_before.xlsx
 
       - name: Rebuild H1 features from historical seasons only
         run: python build_h1_features_v2.py
@@ -226,6 +231,7 @@ jobs:
       - name: Rebuild H2-H8 data inventories
         run: |
           set -e
+          python inventory_h1.py
           python h3_inventory.py
           python h4_inventory.py
           python h5_inventory.py
@@ -242,6 +248,8 @@ jobs:
             python compare_workbooks_v1.py --before "/tmp/${base}_before.xlsx" --after "$f" --out "audit_match_keys_v1_output/${base}_baseline_comparison"
             cp "$f" "audit_match_keys_v1_output/${base}_regenerated.xlsx"
           done
+          python compare_workbooks_v1.py --before /tmp/inventory_h1_before.xlsx --after inventory_h1.xlsx --out audit_match_keys_v1_output/inventory_h1_baseline_comparison
+          cp inventory_h1.xlsx audit_match_keys_v1_output/inventory_h1_regenerated.xlsx
           cp h7_inventory.xlsx audit_match_keys_v1_output/h7_inventory_regenerated.xlsx
 
       - name: Re-run frozen H2-H8 Explore and Edge protocols
@@ -263,6 +271,26 @@ jobs:
             python compare_workbooks_v1.py --before "/tmp/${base}_before.xlsx" --after "$f" --out "audit_match_keys_v1_output/${base}_baseline_comparison"
             cp "$f" "audit_match_keys_v1_output/${base}_regenerated.xlsx"
           done
+
+      - name: Re-run frozen H1 Edge, ROI Edge, Validation and Confirmation
+        run: |
+          set -e
+          python h1_edge_v1.py
+          python roi_edge_v1.py
+          python validation_v1.py
+          python confirmation_v1.py
+
+      - name: Compare frozen H1 Edge and prior research outputs
+        run: |
+          set -e
+          python compare_workbooks_v1.py --before /tmp/h1_edge_v1_results_before.xlsx --after h1_edge_v1_results.xlsx --out audit_match_keys_v1_output/h1_edge_baseline_comparison
+          python compare_workbooks_v1.py --before /tmp/roi_edge_v1_results_before.xlsx --after roi_edge_v1_results.xlsx --out audit_match_keys_v1_output/roi_edge_baseline_comparison
+          python compare_workbooks_v1.py --before /tmp/validation_v1_results_before.xlsx --after validation_v1_results.xlsx --out audit_match_keys_v1_output/validation_baseline_comparison
+          python compare_workbooks_v1.py --before /tmp/confirmation_v1_results_before.xlsx --after confirmation_v1_results.xlsx --out audit_match_keys_v1_output/confirmation_baseline_comparison
+          cp h1_edge_v1_results.xlsx audit_match_keys_v1_output/h1_edge_v1_results_regenerated.xlsx
+          cp roi_edge_v1_results.xlsx audit_match_keys_v1_output/roi_edge_v1_results_regenerated.xlsx
+          cp validation_v1_results.xlsx audit_match_keys_v1_output/validation_v1_results_regenerated.xlsx
+          cp confirmation_v1_results.xlsx audit_match_keys_v1_output/confirmation_v1_results_regenerated.xlsx
 
       - name: Upload audit reports
         if: always()
