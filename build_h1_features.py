@@ -85,7 +85,7 @@ def veri_yukle() -> pd.DataFrame:
         print(f"  {ad:15s} → {sezon}  ({len(df)} satır)")
 
     df = pd.concat(frames, ignore_index=True)
-    df["_tarih"] = pd.to_datetime(df["Date"], dayfirst=True, errors="coerce")
+    df["_tarih"] = pd.to_datetime(df["Date"], dayfirst=True, format="mixed", errors="coerce")
     df = df.sort_values(["_tarih", "HomeTeam", "AwayTeam"]).reset_index(drop=True)
     df["_mac_id"] = df.index
     return df
@@ -360,7 +360,7 @@ def audit_form_pencere(feat: pd.DataFrame):
     - 11. maç → Form10 dolu
     """
     feat = feat.copy()
-    feat["_tarih"] = pd.to_datetime(feat["Date"], dayfirst=True, errors="coerce")
+    feat["_tarih"] = pd.to_datetime(feat["Date"], dayfirst=True, format="mixed", errors="coerce")
 
     ev_df = feat[["Season", "_tarih", "HomeTeam", "Home_Form3_Pre", "Home_Form5_Pre", "Home_Form10_Pre"]].copy()
     ev_df.columns = ["Season", "_tarih", "Takim", "Form3", "Form5", "Form10"]
