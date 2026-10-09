@@ -7,6 +7,7 @@ on:
       - "audit_match_keys_v1.py"
       - "build_h1_features_v2.py"
       - "compare_h1_features_rebuild.py"
+      - "compare_h9_results.py"
       - "h9_inventory.py"
       - "h9_explore_v1.py"
       - "E0.csv"
@@ -40,7 +41,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: python -m pip install --upgrade pip pandas numpy openpyxl
+        run: python -m pip install --upgrade pip pandas numpy openpyxl scipy scikit-learn
 
       - name: Preserve current feature file for comparison
         run: |
@@ -62,6 +63,22 @@ jobs:
 
       - name: Run H9 inventory validation (no model fitting)
         run: python h9_inventory.py
+
+      - name: Preserve prior frozen H9 results
+        run: cp h9_explore_v1_results.xlsx /tmp/h9_explore_v1_results_before.xlsx
+
+      - name: Re-run frozen H9 Explore protocol
+        run: python h9_explore_v1.py
+
+      - name: Compare H9 results with committed baseline
+        run: |
+          python compare_h9_results.py \
+            --before /tmp/h9_explore_v1_results_before.xlsx \
+            --after h9_explore_v1_results.xlsx \
+            --out audit_match_keys_v1_output
+
+      - name: Copy regenerated H9 workbook into report artifact
+        run: cp h9_explore_v1_results.xlsx audit_match_keys_v1_output/h9_explore_v1_results_regenerated.xlsx
 
       - name: Upload audit reports
         if: always()
