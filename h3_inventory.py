@@ -58,7 +58,7 @@ def _guvenli_oku(dosya):
 
 
 def _mac_anahtari(df):
-    tarih = pd.to_datetime(df["Date"], dayfirst=True, errors="coerce").dt.strftime("%Y-%m-%d")
+    tarih = pd.to_datetime(df["Date"], dayfirst=True, format="mixed", errors="coerce").dt.strftime("%Y-%m-%d")
     return (df["Season"].astype(str).str.strip()
             + "|" + tarih.fillna("NA")
             + "|" + df["HomeTeam"].astype(str).str.strip()
